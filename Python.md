@@ -71,6 +71,59 @@ calcsize('hhl')
 
 [struct — Interpret bytes as packed binary data](https://docs.python.org/3/library/struct.html)
 
+#### ctypes.stringat
+
+```python
+from ctypes import *
+class Student(Structure):
+    _pack_=1
+    _fields_=[('name',c_char*10),
+            ('serialnum',c_ushort),
+            ('school',c_ushort),
+            ('gradelevel',c_byte)]
+    def _bytes_(self):
+        return string_at(addressof(self),sizeof(self.__class__))
+
+student=Student()
+student.name=b'raymond'
+student.serialnum=4658
+student.school=264
+student.gradlevel=8
+print(student._bytes_())
+```
+
+
+
+[ctypes — A foreign function library for Python](https://docs.python.org/3/library/ctypes.html)
+
+| Format | ctypes type    | C Type             | Python type            | Standard size | Notes    |
+| :----- | :------------- | :----------------- | :--------------------- | :------------ | :------- |
+| `x`    |                | pad byte           | no value               |               |          |
+| `c`    | `c_char`       | char               | bytes of length 1      | 1             |          |
+|        | `c_wchar`      | wchar_t            | string of length 1     | 2             |          |
+| `b`    | `c_byte`       | signed char        | integer                | 1             | (1), (2) |
+| `B`    | `c_ubyte`      | unsigned char      | integer                | 1             | (2)      |
+| `?`    | `c_bool`       | _Bool              | bool                   | 1             | (1)      |
+| `h`    | `c_short`      | short              | integer                | 2             | (2)      |
+| `H`    | `c_ushort`     | unsigned short     | integer                | 2             | (2)      |
+| `i`    | `c_int`        | int                | integer                | 4             | (2)      |
+| `I`    | `c_uint`       | unsigned int       | integer                | 4             | (2)      |
+| `l`    | `c_long`       | long               | integer                | 4             | (2)      |
+| `L`    | `c_ulong`      | unsigned long      | integer                | 4             | (2)      |
+| `q`    | `c_longlong`   | long long          | integer                | 8             | (2)      |
+| `Q`    | `c_ulonglong`  | unsigned long long | integer                | 8             | (2)      |
+| `n`    | `c_ssize_t`    | `ssize_t`          | integer                |               | (3)      |
+| `N`    | `c_size_t`     | `size_t`           | integer                |               | (3)      |
+| `e`    | `c_double`     | (6)                | float                  | 2             | (4)      |
+| `f`    | `c_float`      | float              | float                  | 4             | (4)      |
+| `d`    | `c_double`     | double             | float                  | 8             | (4)      |
+|        | `c_longdouble` | long double        | float                  | 10            |          |
+| `s`    |                | char[]             | bytes                  |               |          |
+| `p`    |                | char[]             | bytes                  |               |          |
+| `P`    | `c_void_p`     | void*              | integer or `None`      |               | (5)      |
+|        | `c_char_p`     | `char *`           | bytes object or `None` |               |          |
+|        | `c_wchar_p`    | `wchar_t *`        | string or `None`       |               |          |
+
 ### Parse
 
 #### struct.unpack
@@ -82,7 +135,6 @@ def bparse(format:str,buffer:bytes,order='<'):
     format          ::= "[field_name]:[format_char]"
     field_name      ::= arg_name
     format_char     ::= "x" | "c" | "b" | "B" | "?" | "h" | "H" | "i" | "I" | "l" | "L" | "q" | "Q" | "n" | "N" | "e" | "f" | "d" | "s" | "p" | "P"
-
     order           ::= "@" | "=" | "<" | ">" | "!"
     """
     format=list(map(lambda s:s.split(":"),format.split()))
@@ -100,17 +152,24 @@ bparse(student_fmt,record)
 
 ```python
 from ctypes import *
-class Student(Structure):
-    _pack_=1
-    _fields_=[('name',c_char*10),
-            ('serialnum',c_ushort,2),
-            ('school',c_ushort,2),
-            ('gradelevel',c_bool)]
-student=Student()
-memmove(addressof(student),record,sizeof(Student))
+def BStruct(fields,pack=1):
+    class _BStruct(Structure):
+        _pack_  = pack    #Pack aligin
+        _fields_= fields  #Data format
+        def _dict_(self):
+            return {i[0]:getattr(self,i[0]) for i in self._fields_}
+        def _bytes_(self):
+            return string_at(addressof(self),sizeof(self.__class__))
+        def parse(self,bstring):
+            return memmove(addressof(self),bstring,sizeof(self.__class__))
+    return _BStruct()
+
+student=BStruct([('name',c_char*10),('serialnum',c_ushort),('school',c_ushort),('gradelevel',c_byte)])
+student.parse(record)
+print(student._dict_())
 ```
 
-[ctypes — A foreign function library for Python](https://docs.python.org/3/library/ctypes.html)
+
 
 ## Reference
 
@@ -119,3 +178,4 @@ Python version: 3.10
 [The Python Language Reference](https://docs.python.org/3/reference/index.html)
 
 [The Python Standard Library](https://docs.python.org/3/library/index.html)
+

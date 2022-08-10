@@ -11,5 +11,5 @@ Maybe some feel-good code snippet practices.
 
 ## Support:
 
-- python3
+- Python3
 
