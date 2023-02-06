@@ -152,7 +152,7 @@ bparse(student_fmt,record)
 
 ```python
 from ctypes import *
-def BStruct(fields,pack=1):
+def C_Struct(fields,pack=1):
     class _BStruct(Structure):
         _pack_  = pack    #Pack aligin
         _fields_= fields  #Data format
@@ -161,12 +161,12 @@ def BStruct(fields,pack=1):
         def _bytes_(self):
             return string_at(addressof(self),sizeof(self.__class__))
         def parse(self,bstring):
-            return memmove(addressof(self),bstring,sizeof(self.__class__))
+            memmove(addressof(self),bstring,sizeof(self.__class__))
+            return self._dict_()
     return _BStruct()
 
-student=BStruct([('name',c_char*10),('serialnum',c_ushort),('school',c_ushort),('gradelevel',c_byte)])
-student.parse(record)
-print(student._dict_())
+student=C_Struct([('name',c_char*10),('serialnum',c_ushort),('school',c_ushort),('gradelevel',c_byte)])
+print(student.parse(record))
 ```
 
 
